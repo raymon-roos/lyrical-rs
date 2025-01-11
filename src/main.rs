@@ -11,7 +11,7 @@ fn main() {
     let client = create_client();
     let song_url = find_song_url(&client, artist, title);
     let document = get_lyrics_page(&client, song_url.as_str());
-    println!("{}", print_lyrics_from_page(document));
+    println!("{}", get_lyrics_from_page(document));
 }
 
 fn parse_args() -> (String, String) {
@@ -21,22 +21,12 @@ fn parse_args() -> (String, String) {
     (artist.trim().to_lowercase(), title.trim().to_lowercase())
 }
 
-fn get_lyrics_page(client: &Client, url: &str) -> Html {
-    Html::parse_document(
-        client
-            .get(url)
-            .send()
-            .expect("failed to parse URL")
-            .text()
-            .expect("failed to decode song page response")
-            .replace("<br/>", "\n")
-            .as_str(),
-    )
-}
-
-fn print_lyrics_from_page(document: Html) -> String {
-    let selector = Selector::parse(r#"div[data-lyrics-container="true"]"#).unwrap();
-    document.select(&selector).flat_map(|e| e.text()).collect()
+fn create_client() -> reqwest::blocking::Client {
+    reqwest::blocking::Client::builder()
+        .default_headers(create_auth_header())
+        .https_only(true)
+        .build()
+        .expect("failed to create HTTP client")
 }
 
 fn find_song_url(client: &Client, artist: String, title: String) -> String {
@@ -54,12 +44,30 @@ fn find_song_url(client: &Client, artist: String, title: String) -> String {
         .replace("\"", "")
 }
 
-fn create_client() -> reqwest::blocking::Client {
-    reqwest::blocking::Client::builder()
-        .default_headers(create_auth_header())
-        .https_only(true)
-        .build()
-        .expect("failed to create HTTP client")
+fn get_lyrics_page(client: &Client, url: &str) -> Html {
+    Html::parse_document(
+        client
+            .get(url)
+            .send()
+            .expect("failed to parse URL")
+            .text()
+            .expect("failed to decode song page response")
+            .replace("<br/>", "\n")
+            .as_str(),
+    )
+}
+
+fn get_lyrics_from_page(document: Html) -> String {
+    // let selector = Selector::parse(r#"div[id="lyrics-root"]"#).unwrap();
+    // let selector = Selector::parse(r#"div[data-lyrics-container="true"]"#).unwrap();
+    // for element in document.select(&selector) {
+    //     for verse in element.text() {
+    //         print!("{verse}")
+    //     }
+    // }
+
+    let selector = Selector::parse(r#"div[data-lyrics-container="true"]"#).unwrap();
+    document.select(&selector).flat_map(|e| e.text()).collect()
 }
 
 fn create_auth_header() -> HeaderMap {
