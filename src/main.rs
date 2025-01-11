@@ -71,7 +71,9 @@ fn create_auth_header() -> HeaderMap {
 }
 
 fn read_token() -> String {
-    let token = read_to_string(".token").expect("Missing `.token` file");
+    let token = read_to_string(env::var("XDG_CONFIG_HOME").unwrap() + "/lyrical/token")
+        .expect("Failed to read token from $XDG_COFIG_HOME/lyrical/token");
+
     let token = token
         .lines()
         .next()

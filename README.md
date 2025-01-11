@@ -25,9 +25,9 @@ its features are limited.
 3. Create a genius account.
 4. Create an API client: <https://genius.com/api-clients>. Just fill in some random
    things, it doesn't matter for this script.
-5. Generate an access token for your "client", and save it to a file named `.token` in the
-   root of this directory. Maybe make the file only readable and writeable by your own
-   user.
+5. Generate an access token for your "client" and save it to
+   `$XDG_CONFIG_HOME/lyrical/token`. Maybe make the file only readable and writeable by
+   your own user.
 
 ```sh
 # First argument is the artist's name, second argument is the song title.
