@@ -1,0 +1,81 @@
+use reqwest::{
+    blocking::Client,
+    header::{self, HeaderMap},
+};
+use scraper::{Html, Selector};
+use serde_json::Value;
+use std::{env, fs::read_to_string};
+
+fn main() {
+    let (artist, title) = parse_args();
+    let client = create_client();
+    let song_url = find_song_url(&client, artist, title);
+    let document = get_lyrics_page(&client, song_url.as_str());
+    println!("{}", print_lyrics_from_page(document));
+}
+
+fn parse_args() -> (String, String) {
+    let artist = env::args().nth(1).expect("missing artist & title argument");
+    let title = env::args().nth(2).expect("missing title argument");
+
+    (artist.trim().to_lowercase(), title.trim().to_lowercase())
+}
+
+fn get_lyrics_page(client: &Client, url: &str) -> Html {
+    Html::parse_document(
+        client
+            .get(url)
+            .send()
+            .expect("failed to parse URL")
+            .text()
+            .expect("failed to decode song page response")
+            .replace("<br/>", "\n")
+            .as_str(),
+    )
+}
+
+fn print_lyrics_from_page(document: Html) -> String {
+    let selector = Selector::parse(r#"div[data-lyrics-container="true"]"#).unwrap();
+    document.select(&selector).flat_map(|e| e.text()).collect()
+}
+
+fn find_song_url(client: &Client, artist: String, title: String) -> String {
+    client
+        .get("https://api.genius.com/search")
+        .query(&[
+            ("q", format!("{artist} {title}")),
+            ("per_page", "1".to_string()),
+        ])
+        .send()
+        .expect("failed to parse URL")
+        .json::<Value>()
+        .expect("failed to read response of search query")["response"]["hits"][0]["result"]["url"]
+        .to_string()
+        .replace("\"", "")
+}
+
+fn create_client() -> reqwest::blocking::Client {
+    reqwest::blocking::Client::builder()
+        .default_headers(create_auth_header())
+        .https_only(true)
+        .build()
+        .expect("failed to create HTTP client")
+}
+
+fn create_auth_header() -> HeaderMap {
+    let mut headers = header::HeaderMap::new();
+    let auth_value = header::HeaderValue::from_str(read_token().as_str()).unwrap();
+    headers.insert(header::AUTHORIZATION, auth_value);
+
+    headers
+}
+
+fn read_token() -> String {
+    let token = read_to_string(".token").expect("Missing `.token` file");
+    let token = token
+        .lines()
+        .next()
+        .expect("failed to load Genius API access token from file");
+
+    format!("Bearer {token}")
+}
