@@ -58,14 +58,6 @@ fn get_lyrics_page(client: &Client, url: &str) -> Html {
 }
 
 fn get_lyrics_from_page(document: Html) -> String {
-    // let selector = Selector::parse(r#"div[id="lyrics-root"]"#).unwrap();
-    // let selector = Selector::parse(r#"div[data-lyrics-container="true"]"#).unwrap();
-    // for element in document.select(&selector) {
-    //     for verse in element.text() {
-    //         print!("{verse}")
-    //     }
-    // }
-
     let selector = Selector::parse(r#"div[data-lyrics-container="true"]"#).unwrap();
     document.select(&selector).flat_map(|e| e.text()).collect()
 }
