@@ -11,7 +11,10 @@ fn main() {
     let client = create_client();
     let song_url = find_song_url(&client, artist, title);
     let document = get_lyrics_page(&client, song_url.as_str());
-    println!("{}", get_lyrics_from_page(document));
+    println!(
+        "Lyrics retrieved from {song_url}\n\n{}",
+        get_lyrics_from_page(document)
+    );
 }
 
 fn parse_args() -> (String, String) {
