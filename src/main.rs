@@ -62,7 +62,11 @@ fn get_lyrics_page(client: &Client, url: &str) -> Html {
 
 fn get_lyrics_from_page(document: Html) -> String {
     let selector = Selector::parse(r#"div[data-lyrics-container="true"]"#).unwrap();
-    document.select(&selector).flat_map(|e| e.text()).collect()
+    let verse_separator = ["\n"];
+    document
+        .select(&selector)
+        .flat_map(|e| e.text().chain(verse_separator))
+        .collect()
 }
 
 fn create_auth_header() -> HeaderMap {
