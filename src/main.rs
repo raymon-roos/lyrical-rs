@@ -1,7 +1,4 @@
-use reqwest::{
-    blocking::Client,
-    header::{self, HeaderMap},
-};
+use reqwest::blocking::Client;
 use scraper::{Html, Selector};
 use serde_json::Value;
 use std::{env, fs::read_to_string};
@@ -26,7 +23,6 @@ fn parse_args() -> (String, String) {
 
 fn create_client() -> reqwest::blocking::Client {
     reqwest::blocking::Client::builder()
-        .default_headers(create_auth_header())
         .https_only(true)
         .build()
         .expect("failed to create HTTP client")
@@ -39,6 +35,7 @@ fn find_song_url(client: &Client, artist: String, title: String) -> String {
             ("q", format!("{artist} {title}")),
             ("per_page", "1".to_string()),
         ])
+        .bearer_auth(read_token())
         .send()
         .expect("failed to parse URL")
         .json::<Value>()
@@ -69,22 +66,13 @@ fn get_lyrics_from_page(document: Html) -> String {
         .collect()
 }
 
-fn create_auth_header() -> HeaderMap {
-    let mut headers = header::HeaderMap::new();
-    let auth_value = header::HeaderValue::from_str(read_token().as_str()).unwrap();
-    headers.insert(header::AUTHORIZATION, auth_value);
-
-    headers
-}
-
 fn read_token() -> String {
     let token = read_to_string(env::var("XDG_CONFIG_HOME").unwrap() + "/lyrical/token")
         .expect("Failed to read token from $XDG_COFIG_HOME/lyrical/token");
 
-    let token = token
+    token
         .lines()
         .next()
-        .expect("failed to load Genius API access token from file");
-
-    format!("Bearer {token}")
+        .expect("failed to load Genius API access token from file")
+        .to_string()
 }
