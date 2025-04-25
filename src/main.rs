@@ -6,7 +6,8 @@ use std::{env, fs::read_to_string};
 fn main() {
     let (artist, title) = parse_args();
     let client = create_client();
-    let song_url = find_song_url(&client, artist, title);
+    let results = search(&client, artist, title);
+    let song_url = results.first().expect("No search results found");
     let document = get_lyrics_page(&client, song_url.as_str());
     println!(
         "Lyrics retrieved from {song_url}\n\n{}",
@@ -28,20 +29,55 @@ fn create_client() -> reqwest::blocking::Client {
         .expect("failed to create HTTP client")
 }
 
-fn find_song_url(client: &Client, artist: String, title: String) -> String {
-    client
+fn search(client: &Client, artist: String, title: String) -> Vec<String> {
+    let matches = query(client, format!("{artist} {title}"));
+
+    let mut results: Vec<String> = Vec::with_capacity(matches.len() / 2);
+
+    for result in matches.iter() {
+        match result["type"].as_str() {
+            Some("song") => (),
+            _ => continue,
+        }
+
+        if !artist.is_empty() {
+            match result["result"]["artist_names"].as_str() {
+                Some(names) if names.to_lowercase().contains(&artist) => (),
+                _ => continue,
+            }
+        }
+
+        match result["result"]["title_with_featured"].as_str() {
+            Some(song_title) if song_title.to_lowercase().contains(&title) => (),
+            _ => continue,
+        }
+
+        results.push(
+            result["result"]["url"]
+                .as_str()
+                .expect("failed to deserialize url from results")
+                .to_string(),
+        );
+    }
+
+    results
+}
+
+fn query(client: &Client, query: String) -> Vec<Value> {
+    let matches = client
         .get("https://api.genius.com/search")
-        .query(&[
-            ("q", format!("{artist} {title}")),
-            ("per_page", "1".to_string()),
-        ])
+        .query(&[("q", query), ("per_page", "20".to_string())])
         .bearer_auth(read_token())
         .send()
         .expect("failed to parse URL")
         .json::<Value>()
-        .expect("failed to read response of search query")["response"]["hits"][0]["result"]["url"]
-        .to_string()
-        .replace("\"", "")
+        .expect("failed to deserialize response")["response"]["hits"]
+        .clone();
+
+    matches
+        .as_array()
+        .expect("failed to deserialize results")
+        .clone()
 }
 
 fn get_lyrics_page(client: &Client, url: &str) -> Html {
