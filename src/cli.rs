@@ -1,6 +1,6 @@
 use std::{error::Error, fmt::Display};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Args {
     pub title: String,
     pub artist: String,
@@ -20,9 +20,9 @@ pub enum InvalidArgsError {
 
 impl Args {
     fn new() -> Self {
-        Args {
-            title: "".to_string(),
-            artist: "".to_string(),
+        Self {
+            title: String::new(),
+            artist: String::new(),
             url: None,
             list: false,
             max_results: None,
@@ -55,7 +55,7 @@ impl Args {
             args.parse_arg_slice(arg_slice)?; // Early return on argument parsing error
         }
 
-        if args.title.is_empty() && args.url.as_ref().is_some_and(|u| u.is_empty()) {
+        if args.title.is_empty() && args.url.as_ref().is_some_and(String::is_empty) {
             return Err(InvalidArgsError::MissingArgument);
         }
 
@@ -68,7 +68,7 @@ impl Args {
             [arg_name, arg_value] => self.parse_arg_pair((arg_name, arg_value))?,
             [arg, ..] => return Err(InvalidArgsError::MissingValue(arg.to_string())),
             _ => return Err(InvalidArgsError::MissingArgument),
-        };
+        }
         Ok(())
     }
 
@@ -80,14 +80,14 @@ impl Args {
                 return Err(InvalidArgsError::MissingValue(flag.to_string()))
             }
             _ => return Err(InvalidArgsError::Unknown(flag.to_string())),
-        };
+        }
 
         Ok(())
     }
 
     fn parse_arg_pair(&mut self, (arg, val): (&str, &str)) -> Result<(), InvalidArgsError> {
         match (arg.trim_start_matches("--"), val) {
-            (arg @ "title" | arg @ "artist" | arg @ "url", "") => {
+            (arg @ ("title" | "artist" | "url"), "") => {
                 return Err(InvalidArgsError::MissingValue(arg.to_string()))
             }
             ("title", title) => self.title = title.to_string(),

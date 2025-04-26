@@ -19,8 +19,8 @@ impl Genius {
         }
     }
 
-    pub fn search_lyrics(&self, artist: String, title: String) -> Result<String, GeniusError> {
-        let results = self.search(&artist, &title, 1);
+    pub fn search_lyrics(&self, artist: &String, title: &String) -> Result<String, GeniusError> {
+        let results = self.search(artist, title, 1);
 
         if results.is_empty() {
             return Err(GeniusError::NoResultsFound(format!("{artist} - {title}")));
@@ -29,12 +29,12 @@ impl Genius {
         Ok(self.lyrics_from_url(results.first().unwrap()))
     }
 
-    pub fn lyrics_from_url<U: IntoUrl + Display>(&self, url: U) -> String {
+    pub fn lyrics_from_url<U: IntoUrl + Display>(&self, url: &U) -> String {
         let parsed_url = Url::parse(url.as_str()).expect("URL is invalid");
 
         let page = self.get_lyrics_page(parsed_url);
 
-        let lyrics = Self::get_lyrics_from_page(page);
+        let lyrics = Self::get_lyrics_from_page(&page);
 
         format!("Lyrics retrieved from {url}\n\n{lyrics}")
     }
@@ -44,7 +44,7 @@ impl Genius {
 
         let mut results: Vec<String> = Vec::with_capacity(max_results);
 
-        for result in matches.iter() {
+        for result in &matches {
             match result["type"].as_str() {
                 Some("song") => (),
                 _ => continue,
@@ -104,7 +104,7 @@ impl Genius {
         )
     }
 
-    fn get_lyrics_from_page(page: Html) -> String {
+    fn get_lyrics_from_page(page: &Html) -> String {
         let selector = Selector::parse(r#"div[data-lyrics-container="true"]"#).unwrap();
         let verse_separator = ["\n"];
         page.select(&selector)

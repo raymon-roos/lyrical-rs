@@ -1,7 +1,7 @@
 use crate::cli::*;
 
 fn fake_args<'a>(args: &'a [&'a str]) -> impl Iterator<Item = String> + 'a {
-    std::iter::once("".to_string()).chain(args.iter().map(|s| s.to_string()))
+    std::iter::once(String::new()).chain(args.iter().map(ToString::to_string))
 }
 
 #[test]
