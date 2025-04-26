@@ -19,7 +19,7 @@ impl Genius {
         }
     }
 
-    pub fn search_lyrics(&self, artist: &String, title: &String) -> Result<String, GeniusError> {
+    pub fn search_lyrics(&self, artist: &str, title: &str) -> Result<String, GeniusError> {
         let results = self.search(artist, title, 1);
 
         if results.is_empty() {
