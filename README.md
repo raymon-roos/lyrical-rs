@@ -32,13 +32,14 @@ its features are limited.
    `$XDG_CONFIG_HOME/lyrical/token`. Maybe make the file only readable and writeable by
    your own user.
 
-#### Run on Nix:
+#### Run or install on Nix:
 
 **Try out without installing:**
 
 ```sh
-nix run 'github:raymon-roos/lyrical-rs' 'windmills' 'true natural'
-#                                        ^ artist    ^ song title
+nix run 'github:raymon-roos/lyrical-rs' --artist 'windmills' --title 'true natural'
+# See all available options:
+nix run 'github:raymon-roos/lyrical-rs' --help
 ```
 
 **Install into home-manager or system configuration using flakes:**
@@ -68,10 +69,30 @@ environment = {
 2. Make sure you have the OpenSSL headers installed, as per [^ssl]
 3. Run `cargo install --path .` (make sure that `$CARGO_HOME/bin` is in your `$PATH`)
 
+### Usage
+
+`lyrical-rs --help`
+
+```
+Available options:
+
+--help                       Print this help text and exit.
+--title  <title>  (required) Title of the song to search lyrics for.
+--artist <artist> (optional) Restrict search results by the name of the
+                             song's artist.
+--url    <url>    (optional) Rather than searching, fetch lyrics from this
+                             genius.com url directly. If present, `--artist`,
+                             `--title` and `--list` will be ignored.
+--list   [count]  (optional) Print list of [count] (default 20) genius.com search
+                             results, rather than song lyrics. Useful for
+                             further filtering, manually or through external tools.
+```
+
+**Example**
+
 ```sh
-# First argument is the artist's name, second argument is the song title.
-# Both are required.
-lyrical-rs 'Windmills' 'True Natural'
+lyrical-rs --artist 'Sleep Token' --title 'Euclid' --list
+lyrical-rs --url 'https://genius.com/The-arcadian-wild-wander-wonder-lyrics'
 ```
 
 I use a bash script to get the currently playing song in cmus and to save the lyrics to
