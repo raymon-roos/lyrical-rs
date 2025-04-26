@@ -62,8 +62,8 @@ impl Args {
         Ok(args)
     }
 
-    fn parse_arg_slice(&mut self, arg_pair: &[String]) -> Result<(), InvalidArgsError> {
-        match arg_pair {
+    fn parse_arg_slice(&mut self, arg_slice: &[String]) -> Result<(), InvalidArgsError> {
+        match arg_slice {
             [flag] => self.parse_flag_arg(flag)?,
             [arg_name, arg_value] => self.parse_arg_pair((arg_name, arg_value))?,
             [arg, ..] => return Err(InvalidArgsError::MissingValue(arg.to_string())),
