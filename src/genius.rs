@@ -40,6 +40,8 @@ impl Genius {
     }
 
     pub fn search(&self, artist: &str, title: &str, max_results: usize) -> Vec<String> {
+        let artist = artist.to_lowercase();
+        let title = title.to_lowercase();
         let matches = self.query(format!("{artist} {title}"));
 
         let mut results: Vec<String> = Vec::with_capacity(max_results);
@@ -52,13 +54,13 @@ impl Genius {
 
             if !artist.is_empty() {
                 match result["result"]["artist_names"].as_str() {
-                    Some(names) if names.to_lowercase().contains(artist) => (),
+                    Some(names) if names.to_lowercase().contains(&artist) => (),
                     _ => continue,
                 }
             }
 
             match result["result"]["title_with_featured"].as_str() {
-                Some(song_title) if song_title.to_lowercase().contains(title) => (),
+                Some(song_title) if song_title.to_lowercase().contains(&title) => (),
                 _ => continue,
             }
 
