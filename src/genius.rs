@@ -47,6 +47,10 @@ impl Genius {
         let mut results: Vec<String> = Vec::with_capacity(max_results);
 
         for result in &matches {
+            if results.len() >= max_results {
+                break;
+            }
+
             match result["type"].as_str() {
                 Some("song") => (),
                 _ => continue,
@@ -72,7 +76,7 @@ impl Genius {
             );
         }
 
-        results.into_iter().take(max_results).collect()
+        results
     }
 
     fn query(&self, query: String) -> Vec<Value> {
