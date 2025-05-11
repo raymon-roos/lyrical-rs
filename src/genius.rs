@@ -127,12 +127,12 @@ impl Genius {
 
     fn read_token() -> String {
         let token = read_to_string(env::var("XDG_CONFIG_HOME").unwrap() + "/lyrical/token")
-            .expect("Failed to read token from $XDG_COFIG_HOME/lyrical/token");
+            .expect("File `$XDG_COFIG_HOME/lyrical/token` missing or unreadable");
 
         token
             .lines()
             .next()
-            .expect("failed to load Genius API access token from file")
+            .expect("failed to read Genius API access token from file")
             .to_string()
     }
 }
