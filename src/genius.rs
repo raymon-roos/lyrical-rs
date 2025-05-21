@@ -42,38 +42,25 @@ impl Genius {
     pub fn search(&self, artist: &str, title: &str, max_results: usize) -> Vec<String> {
         let artist = artist.to_lowercase();
         let title = title.to_lowercase();
-        let matches = self.query(format!("{artist} {title}"));
+        let query = format!("{artist} {title}");
+        let matches = self.query(query.clone());
+        let mut results = Self::filter_matches(&matches, &artist, &title, max_results);
 
-        let mut results: Vec<String> = Vec::with_capacity(max_results);
-
-        for result in &matches {
-            if results.len() >= max_results {
-                break;
+        // Sometimes, a song's artist/title contains a segment like "(Ft. Other Artist)",
+        // "(XYZ remix)", (Live in Some Place), (Original), (clean), (by Somebody), or
+        // (Unreleased). This can mess with the search results. Should the search term
+        // contain parentheses, and no result had been found, then try again having
+        // removed this segment.
+        let delimiters = ['(', '{', '['];
+        if results.is_empty() && title.contains(delimiters) {
+            // Primitive implementation, assuming parenthesized segment is always at
+            // the end of the title
+            if let Some((new_title, _)) = title.split_once(delimiters) {
+                let new_title = new_title.trim();
+                let matches = self.query(format!("{artist} - {new_title}"));
+                eprintln!("INFO: retrying search with `{artist} - {new_title}`");
+                results = Self::filter_matches(&matches, &artist, new_title, max_results);
             }
-
-            match result["type"].as_str() {
-                Some("song") => (),
-                _ => continue,
-            }
-
-            if !artist.is_empty() {
-                match result["result"]["artist_names"].as_str() {
-                    Some(names) if names.to_lowercase().contains(&artist) => (),
-                    _ => continue,
-                }
-            }
-
-            match result["result"]["title_with_featured"].as_str() {
-                Some(song_title) if song_title.to_lowercase().contains(&title) => (),
-                _ => continue,
-            }
-
-            results.push(
-                result["result"]["url"]
-                    .as_str()
-                    .expect("failed to deserialize url from results")
-                    .to_string(),
-            );
         }
 
         results
@@ -95,6 +82,47 @@ impl Genius {
             .as_array()
             .expect("failed to deserialize results")
             .clone()
+    }
+
+    fn filter_matches(
+        matches: &[Value],
+        artist: &str,
+        title: &str,
+        max_results: usize,
+    ) -> Vec<String> {
+        let mut results: Vec<String> = Vec::with_capacity(max_results);
+
+        for result in matches {
+            if results.len() >= max_results {
+                break;
+            }
+
+            match result["type"].as_str() {
+                Some("song") => (),
+                _ => continue,
+            }
+
+            if !artist.is_empty() {
+                match result["result"]["artist_names"].as_str() {
+                    Some(names) if names.to_lowercase().contains(artist) => (),
+                    _ => continue,
+                }
+            }
+
+            match result["result"]["title_with_featured"].as_str() {
+                Some(song_title) if song_title.to_lowercase().contains(title) => (),
+                _ => continue,
+            }
+
+            results.push(
+                result["result"]["url"]
+                    .as_str()
+                    .expect("failed to deserialize url from results")
+                    .to_string(),
+            );
+        }
+
+        results
     }
 
     fn get_lyrics_page(&self, url: Url) -> Html {
