@@ -1,10 +1,11 @@
 use reqwest::{blocking::Client, IntoUrl, Url};
 use scraper::{Html, Selector};
 use serde_json::Value;
-use std::{env, error::Error, fmt::Display, fs::read_to_string};
+use std::{error::Error, fmt::Display};
 
 pub struct Genius {
     client: Client,
+    api_token: String,
 }
 
 #[derive(Debug, PartialEq, PartialOrd, Ord)]
@@ -13,9 +14,10 @@ pub enum GeniusError {
 }
 
 impl Genius {
-    pub fn new() -> Self {
+    pub fn new(api_token: String) -> Self {
         Self {
             client: Self::create_client(),
+            api_token,
         }
     }
 
@@ -71,7 +73,7 @@ impl Genius {
             .client
             .get("https://api.genius.com/search")
             .query(&[("q", query), ("per_page", "20".to_string())])
-            .bearer_auth(Self::read_token())
+            .bearer_auth(&self.api_token)
             .send()
             .expect("failed to parse URL")
             .json::<Value>()
@@ -151,17 +153,6 @@ impl Genius {
             .https_only(true)
             .build()
             .expect("failed to create HTTP client")
-    }
-
-    fn read_token() -> String {
-        let token = read_to_string(env::var("XDG_CONFIG_HOME").unwrap() + "/lyrical/token")
-            .expect("File `$XDG_COFIG_HOME/lyrical/token` missing or unreadable");
-
-        token
-            .lines()
-            .next()
-            .expect("failed to read Genius API access token from file")
-            .to_string()
     }
 }
 
