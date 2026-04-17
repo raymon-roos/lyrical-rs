@@ -143,9 +143,25 @@ impl Genius {
     fn get_lyrics_from_page(page: &Html) -> String {
         let selector = Selector::parse(r#"div[data-lyrics-container="true"]"#).unwrap();
         let verse_separator = ["\n"];
-        page.select(&selector)
+        let lyrics = page
+            .select(&selector)
             .flat_map(|e| e.text().chain(verse_separator))
-            .collect()
+            .collect::<String>();
+
+        Self::clean_lyrics(lyrics.as_str()).to_owned()
+    }
+
+    // This trims the preamble from genius.com lyric page text based on string matching.
+    fn clean_lyrics(lyrics: &str) -> &str {
+        ["[", "Lyrics"]
+            .iter()
+            .fold(lyrics, |lyrics, pattern| match lyrics.find(pattern) {
+                Some(mut i) => {
+                    i += if pattern.len() > 1 { pattern.len() } else { 0 };
+                    &lyrics[i..]
+                }
+                _ => lyrics,
+            })
     }
 
     fn create_client() -> reqwest::blocking::Client {
